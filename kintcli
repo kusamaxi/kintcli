@@ -9,7 +9,7 @@ usage() {
   echo "  install vault|runner|subkey|bitcoin <network>       Install a vault, runner, subkey, or bitcoin on the specified network"
   echo "  service start|stop|restart <client> <network>       Start, stop, or restart a client service on the specified network"
   echo "  update subkey|bitcoin <version>                     Update subkey or bitcoin to the specified version"
-  echo "  version                                             Print version information"
+  echo "  version  bitcoin|subkey|runner|vault                Print version information"
   echo ""
 }
 
