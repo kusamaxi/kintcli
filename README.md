@@ -12,7 +12,7 @@ cargo (Rust)
 
 ## Installation
 To install Kintcli, clone the repository and run the following command in the root directory:
-git clone https://github.com/kusamaxi/kintcli && chmod +x kintcli/kintcli && mv kintcli/kintcli /usr/local/bin/
+```git clone https://github.com/kusamaxi/kintcli && chmod +x kintcli/kintcli && mv kintcli/kintcli /usr/local/bin/```
 
 ## Usage
 kintcli
