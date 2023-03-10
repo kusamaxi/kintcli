@@ -1,17 +1,21 @@
 #!/bin/sh
-VERSION="0.1.0"
-
+VERSION="0.1.1"
 
 usage() {
   echo "Usage: $0 command [args...]"
   echo ""
   echo "Commands:"
-  echo "  install vault|runner|subkey|bitcoin <network>       Install a vault, runner, subkey, or bitcoin on the specified network"
-  echo "  service start|stop|restart <client> <network>       Start, stop, or restart a client service on the specified network"
-  echo "  update subkey|bitcoin <version>                     Update subkey or bitcoin to the specified version"
-  echo "  version  bitcoin|subkey|runner|vault                Print version information"
+  echo "  install vault|runner|subkey|bitcoin <network>      Install a vault, runner, subkey, or bitcoin on the specified network"
+  echo "  service start|stop|restart <client> <network>      Start, stop, or restart a client service on the specified network"
+  echo "  update subkey|bitcoin <version>                    Update subkey or bitcoin to the specified version"
+  echo "  version  bitcoin|subkey|runner|vault               Print version information"
   echo ""
+  echo "Examples:"
+  echo "  $0 install bitcoin mainnet                          Install Bitcoin on the mainnet"
+  echo "  $0 service start runner testnet                     Start the Runner client on the testnet"
+  echo "  $0 update subkey v2.0.0                             Update Subkey to version 2.0.0"
 }
+
 
 create_vault_service() {
   echo "Creating $network Vault"
