@@ -11,7 +11,7 @@ cargo (Rust)
 ```
 
 ## Installation
-```git clone https://github.com/kusamaxi/kintcli && sudo chmod +x kintcli/kintcli && sudo mv kintcli/kintcli /usr/local/bin/```
+```git clone https://github.com/kusamaxi/kintcli && sudo chmod +x kintcli/kintcli && sudo cp kintcli/kintcli /usr/local/bin/```
 
 ## Usage
 kintcli
