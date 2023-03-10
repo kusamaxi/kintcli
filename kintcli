@@ -1,0 +1,201 @@
+#!/bin/sh
+VERSION="0.1.0"
+
+
+usage() {
+  echo "Usage: $0 command [args...]"
+  echo ""
+  echo "Commands:"
+  echo "  install vault|runner|subkey|bitcoin <network>       Install a vault, runner, subkey, or bitcoin on the specified network"
+  echo "  service start|stop|restart <client> <network>       Start, stop, or restart a client service on the specified network"
+  echo "  update subkey|bitcoin <version>                     Update subkey or bitcoin to the specified version"
+  echo "  version                                             Print version information"
+  echo ""
+}
+
+create_vault_service() {
+  echo "Creating $network Vault"
+  [ -d "/opt/$network" ] || mkdir "/opt/$network"
+  [ -d "/opt/$network/vault" ] || mkdir "/opt/$network/vault"
+  cp ./vault "/opt/$network/vault/"
+  cp ./keyfile.json "/opt/$network/vault/"
+  [ -d /usr/lib/systemd/system/ ] || mkdir /usr/lib/systemd/system/
+  cp "$network-vault.service" /usr/lib/systemd/system/
+}
+
+create_runner_service() {
+  echo "Creating $network Runner"
+  [ -d "/opt/$network" ] || mkdir "/opt/$network"
+  [ -d "/opt/$network/runner" ] || mkdir "/opt/$network/runner"
+  cp ./runner "/opt/$network/runner/"
+  cp ./keyfile.json "/opt/$network/runner/"
+  [ -d /usr/lib/systemd/system/ ] || mkdir /usr/lib/systemd/system/
+  cp "$network-runner.service" /usr/lib/systemd/system/
+}
+
+download_subkey() {
+  # Get the dependencies without needing to install the Substrate and Subkey binary
+  curl https://getsubstrate.io -sSf | bash -s -- --fast
+
+  # Install only `subkey`
+  cargo install --force subkey
+
+  # Generate the subkey and save it to keyfile.json
+  subkey generate --output-type json | jq '{(.accountId): .secretPhrase}' > keyfile.json
+}
+
+install_bitcoin() {
+  echo "Installing Bitcoin Core $1"
+  cd /tmp || exit
+  wget "https://bitcoincore.org/bin/bitcoin-core-$1/bitcoin-$1-x86_64-linux-gnu.tar.gz"
+  tar -xzf "bitcoin-$1-x86_64-linux-gnu.tar.gz"
+  sudo cp "bitcoin-$1/bin/*" "/usr/local/bin/"
+}
+
+case $1 in
+
+  install)
+    case $2 in
+      vault)
+        service_generator="create_vault_service"
+        ;;
+      runner)
+        service_generator="create_runner_service"
+        ;;
+      subkey)
+        service_generator="download_subkey"
+        ;;
+      bitcoin)
+        service_generator="install_bitcoin"
+        ;;
+      *)
+        usage
+        exit 1
+        ;;
+    esac
+
+    case $3 in
+      -h|--help)
+        usage
+        ;;
+      testnet-kintsugi)
+        network="testnet-kintsugi"
+        $service_generator "${@:4}"
+        ;;
+      testnet-interlay)
+        network="testnet-interlay"
+        $service_generator "${@:4}"
+        ;;
+      kintsugi)
+        network="kintsugi"
+        $service_generator "${@:4}"
+        ;;
+      interlay)
+        network="interlay"
+        $service_generator "${@:4}"
+        ;;
+      *)
+        usage
+        exit 1
+        ;;
+    esac
+    ;;
+
+  service)
+    case $2 in
+      start)
+        systemctl start "$network-$3.service"
+        ;;
+      stop)
+        systemctl stop "$network-$3.service"
+        ;;
+      restart)
+        systemctl restart "$network-$3.service"
+        ;;
+      *)
+        usage
+        echo "Please specify a service command as the second argument. Valid options are: start, stop, restart"
+        exit 1
+        ;;
+    esac
+    ;;
+
+  update)
+    case $2 in
+      subkey)
+        download_subkey
+        ;;
+      bitcoin)
+        install_bitcoin "$3"
+        ;;
+      *)
+        usage
+        echo "Please specify an update command as the second argument. Valid options are: subkey, bitcoin"
+        exit 1
+        ;;
+    esac
+    ;;
+  version)
+    if [ $# -eq 1 ]; then
+    echo "
+                   Ok. ...,kk
+                 kkMMM: ...,NMMMkk
+          ...kMMMWKkdl.  ;l:kO0XWMMMkl....
+        .. ..dN0d,..'dx  'OKk,..'lOX0;.....
+        l'.   l0OkdkXO:    ,xX0xxxkOd,...';
+       kMNxld   .d0xxkx.   :kkxOXx,..ddlKWM
+      kMM0;kO..    ....     ....,x0k;cN;oWMM
+     kMMO',NO0k.      .      ......cxl0d.cNMM
+     MMK'.xWO;...                      ...oWMk
+    MMWccK0:.....       kusamaxi     ...lXk,KMW
+   .:c;,Ok'........                .....cKd;;'..
+   ..................             ..............
+   .cc:,O0,.............         .......lXo;lc..
+    MMWl:0Xl.............      .......'kXx,KMM
+     MMX,.dW0c.........     ........,xNK,.dWMk
+     kMM0,,XxO0l....    ..........,kKxXd.oWMM
+      kMMK:k0'cOc.  ............;OKd'lN;xWMM
+       kWXx:x..':OKOOOOOOOOOOOOKNx:,'dxo0NM
+        .....lXOkxoxKOc'''';xXOodkO00'.....
+        ....'kWKx:'..lKKxd0Xx,..,oOXNc.....
+         ...'kkMMMNX0Od:,,:cO0KXWMMMkx....
+                 kkMMMO....cWMMMk
+                    kWWKxdONMk"
+    echo ""
+    echo "$0 v$VERSION from kusamaxi.com"
+    echo "Usage: $0 version bitcoin|subkey|runner|vault"
+  else
+    case $2 in
+      subkey)
+        if ! command -v subkey &> /dev/null
+        then
+          echo "Subkey is not installed. Please install it using '$0 install subkey <network>'"
+        else
+          subkey --version
+        fi
+        ;;
+      bitcoin)
+        bitcoind --version
+        ;;
+      runner)
+        runner_version="$(/opt/$network/runner/runner --version)"
+        echo "Runner version: $runner_version"
+        ;;
+      vault)
+        vault_version="$(/opt/$network/vault/vault --version)"
+        echo "Vault version: $vault_version"
+        ;;
+      *)
+        usage
+        echo "Please specify a client as the second argument. Valid options are: bitcoin, subkey, runner, vault"
+        exit 1
+        ;;
+    esac
+    fi
+    ;;
+  *)
+    usage
+    echo "Please specify a command as the first argument. Valid options are: install, service, update"
+    exit 1
+    ;;
+esac
